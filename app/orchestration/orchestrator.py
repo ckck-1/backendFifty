@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.orchestration.factory import agent_factory
 from app.orchestration.registry import ALL_AGENTS, get_agent_by_name
-from app.orchestration.climate_crew import ClimateCrew
+from app.orchestration.graph import climate_graph
 from app.services.analysis_service import analysis_service
 from app.services.memory import memory_service
 
@@ -101,18 +101,24 @@ class Orchestrator:
         # 4. Check memory for prior context
         prior_context = memory_service.get(f"context:{location}")
 
-        # 5. Build and run crew
+        # 5. Build and run graph
         try:
-            crew = ClimateCrew(
-                agents=crew_agents,
-                location=location,
-                query=query,
-                prior_context=prior_context,
-            )
-            crew_output = crew.kickoff()
+            initial_state = {
+                "location": location,
+                "query": query,
+                "prior_context": prior_context or {},
+                "selected_agent_names": [spec.name for spec in agent_specs],
+                "current_agent_index": 0,
+                "accumulated_context": "",
+                "results": [],
+                "final_report": "",
+                "error": None
+            }
+            
+            final_state = climate_graph.invoke(initial_state)
 
             # 6. Parse output
-            result_text = str(crew_output)
+            result_text = final_state["final_report"]
             risk_level = self._extract_risk(result_text)
             confidence = self._extract_confidence(result_text)
             recommendations = self._extract_recommendations(result_text)
