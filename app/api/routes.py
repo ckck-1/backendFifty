@@ -12,8 +12,8 @@ router.include_router(analysis_router, prefix="/api", tags=["analysis"])
 
 @router.get("/agents")
 async def list_agents():
-    """Return all 50 registered agents."""
-    from app.agents.registry import ALL_AGENTS
+    """Return all 15 registered MVP agents."""
+    from app.orchestration.registry import ALL_AGENTS
     return {
         "count": len(ALL_AGENTS),
         "agents": [

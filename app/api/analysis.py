@@ -6,7 +6,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from app.models.schemas import AnalysisRequest, AnalysisResponse
-from app.agents.orchestrator import orchestrator
+from app.orchestration.orchestrator import orchestrator
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
