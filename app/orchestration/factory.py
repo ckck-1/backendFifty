@@ -7,21 +7,21 @@ from typing import Any, Callable, Optional
 
 from app.orchestration.registry import AgentSpec, ALL_AGENTS, get_agent_by_name, get_agents_by_ids
 from app.services.mistral import mistral_service
-from app.tools.weather_tool import WeatherTool
-from app.tools.satellite_tool import SatelliteTool
-from app.tools.gis_tool import GISTool
-from app.tools.database_tool import DatabaseTool
-from app.tools.report_tool import ReportTool
+from app.tools.weather_tool import weather_analysis
+from app.tools.satellite_tool import satellite_analysis
+from app.tools.gis_tool import gis_analysis
+from app.tools.database_tool import database_lookup
+from app.tools.report_tool import report_generator
 
 logger = logging.getLogger(__name__)
 
 # Map tool name strings to their instances
 _TOOL_MAP: dict[str, Any] = {
-    "weather_analysis": WeatherTool(),
-    "satellite_analysis": SatelliteTool(),
-    "gis_analysis": GISTool(),
-    "database_lookup": DatabaseTool(),
-    "report_generator": ReportTool(),
+    "weather_analysis": weather_analysis,
+    "satellite_analysis": satellite_analysis,
+    "gis_analysis": gis_analysis,
+    "database_lookup": database_lookup,
+    "report_generator": report_generator,
 }
 
 
@@ -86,7 +86,7 @@ class Agent:
         outputs: dict[str, str] = {}
         for tool in self.tools:
             try:
-                outputs[tool.name] = tool.run(location)
+                outputs[tool.name] = tool.invoke(location)
             except Exception as exc:
                 outputs[tool.name] = f"Tool error: {exc}"
         return outputs
