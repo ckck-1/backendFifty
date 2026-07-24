@@ -7,8 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import get_settings
-from app.database import close_db, init_db
+from app.core.config import get_settings
+from app.core.database import close_db, init_db
 from app.api.routes import router
 
 settings = get_settings()
@@ -65,13 +65,13 @@ async def root():
 @app.get("/health")
 async def health():
     """Full health check."""
-    from app.agents.registry import ALL_AGENTS
+    from app.orchestration.registry import ALL_AGENTS
     from app.services.mistral import mistral_service
 
     db_status = "connected"
     try:
         from sqlalchemy import text
-        from app.database import engine
+        from app.core.database import engine
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
     except Exception:
