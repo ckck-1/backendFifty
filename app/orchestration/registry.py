@@ -16,9 +16,9 @@ class AgentSpec:
     expected_output: str = ""
     category: str = ""
 
-from app.domains.rainfall.agents import RAINFALL_AGENTS
-from app.domains.sunshine_heat.agents import SUNSHINE_HEAT_AGENTS
-from app.domains.climate_intel.agents import CLIMATE_INTEL_AGENTS
+from app.domains.rainfall import RAINFALL_AGENTS
+from app.domains.sunshine_heat import SUNSHINE_HEAT_AGENTS
+from app.domains.climate_intel import CLIMATE_INTEL_AGENTS
 
 ALL_AGENTS: list[AgentSpec] = (
     RAINFALL_AGENTS
