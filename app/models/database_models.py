@@ -1,6 +1,7 @@
 """SQLAlchemy ORM models for Project Fifty."""
 from __future__ import annotations
 
+import enum
 import uuid
 from datetime import datetime
 
@@ -22,6 +23,13 @@ from app.core.database import Base
 
 def generate_uuid() -> uuid.UUID:
     return uuid.uuid4()
+
+
+class ApprovalStatus(str, enum.Enum):
+    """Approval state for Cabinet briefs (FR-15 / AC-07)."""
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class User(Base):
@@ -123,7 +131,16 @@ class ClimateReport(Base):
     confidence = Column(Float)
     recommendations = Column(JSON, default=list)
     full_report = Column(Text)
-    format_type = Column(String(50), default="json")  # json, markdown, pdf
+    report_type = Column(String(50), default="json")  # json, markdown, pdf, cabinet_brief
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Cabinet brief approval gate (FR-15 / AC-07)
+    approval_status = Column(
+        Enum(ApprovalStatus),
+        default=ApprovalStatus.PENDING,
+        nullable=False,
+    )
+    reviewed_by = Column(String(200), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
 
     analysis_request = relationship("AnalysisRequest", back_populates="reports")
