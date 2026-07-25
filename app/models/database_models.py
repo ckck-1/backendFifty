@@ -1,8 +1,9 @@
 """SQLAlchemy ORM models for Project Fifty."""
 from __future__ import annotations
 
+import enum
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     Column,
@@ -17,11 +18,18 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import relationship
 
-from app.database import Base
+from app.core.database import Base
 
 
 def generate_uuid() -> uuid.UUID:
     return uuid.uuid4()
+
+
+class ApprovalStatus(str, enum.Enum):
+    """Approval state for Cabinet briefs (FR-15 / AC-07)."""
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class User(Base):
@@ -34,8 +42,8 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     role = Column(String(50), default="analyst")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     analysis_requests = relationship("AnalysisRequest", back_populates="user")
 
@@ -73,8 +81,8 @@ class AnalysisRequest(Base):
     result_summary = Column(Text)
     risk_level = Column(String(50))
     confidence = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    completed_at = Column(DateTime(timezone=True), nullable=True)
 
     user = relationship("User", back_populates="analysis_requests")
     location = relationship("Location", back_populates="analysis_requests")
@@ -101,7 +109,7 @@ class AgentResult(Base):
     execution_time_ms = Column(Integer)
     confidence_score = Column(Float)
     metadata_ = Column("metadata", JSON, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     analysis_request = relationship("AnalysisRequest", back_populates="agent_results")
 
@@ -123,7 +131,16 @@ class ClimateReport(Base):
     confidence = Column(Float)
     recommendations = Column(JSON, default=list)
     full_report = Column(Text)
-    format_type = Column(String(50), default="json")  # json, markdown, pdf
-    created_at = Column(DateTime, default=datetime.utcnow)
+    report_type = Column(String(50), default="json")  # json, markdown, pdf, cabinet_brief
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+    # Cabinet brief approval gate (FR-15 / AC-07)
+    approval_status = Column(
+        Enum(ApprovalStatus),
+        default=ApprovalStatus.PENDING,
+        nullable=False,
+    )
+    reviewed_by = Column(String(200), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
 
     analysis_request = relationship("AnalysisRequest", back_populates="reports")

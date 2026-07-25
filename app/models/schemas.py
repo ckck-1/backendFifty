@@ -84,3 +84,24 @@ class ErrorResponse(BaseModel):
     """Standard error response."""
     detail: str
     code: str = "INTERNAL_ERROR"
+
+
+# ── Cabinet Brief Approval Schemas (FR-15 / AC-07) ─────────────
+
+class CabinetBriefResponse(BaseModel):
+    """Response schema for a Cabinet brief pending approval."""
+    id: UUID
+    analysis_request_id: UUID
+    title: str
+    summary: str
+    risk_level: Optional[str] = None
+    approval_status: str
+    created_at: datetime
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+
+
+class ApprovalDecision(BaseModel):
+    """Request body for approving or rejecting a Cabinet brief."""
+    reviewer_name: str = Field(..., description="Name of the authorising operator")
+    notes: Optional[str] = Field(None, description="Optional review notes")
