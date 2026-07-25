@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     CREW_VERBOSE: bool = True
     CREW_MAX_ITER: int = 10
 
+    # ArcGIS
+    arcgis_api_key: str = ""
+    arcgis_feature_layer_url: str = ""
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
