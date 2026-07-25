@@ -8,16 +8,16 @@ from app.orchestration.factory import agent_factory
 
 
 def test_all_agents_count():
-    assert len(ALL_AGENTS) >= 17
+    assert len(ALL_AGENTS) == 50
 
 
 def test_agent_categories():
     rainfall = get_agents_by_category("rainfall")
     sunshine = get_agents_by_category("sunshine_heat")
     climate = get_agents_by_category("climate_intel")
-    assert len(rainfall) >= 7
-    assert len(sunshine) >= 5
-    assert len(climate) >= 5
+    assert len(rainfall) == 15
+    assert len(sunshine) == 15
+    assert len(climate) == 20
 
 
 def test_get_agent_by_name():

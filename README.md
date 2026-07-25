@@ -4,7 +4,7 @@ A domain-driven multi-agent climate intelligence platform built with **FastAPI**
 
 ## Overview
 
-This MVP utilizes 15 specialized agents across three domains (Rainfall, Sunshine & Heat, Climate Intelligence) to synthesize climate data, predict drought indices, and recommend actionable insights. The orchestration is powered by a sequential LangGraph state machine.
+This platform utilizes 50 specialized agents across three domains (Rainfall, Sunshine & Heat, Climate Intelligence) to synthesize climate data, predict drought indices, and recommend actionable insights. The orchestration is powered by a sequential LangGraph state machine.
 
 ## Setup
 
