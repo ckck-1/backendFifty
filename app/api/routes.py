@@ -14,7 +14,10 @@ router.include_router(cabinet_router, prefix="/api", tags=["cabinet"])
 
 @router.get("/agents")
 async def list_agents():
-    """Return all 15 registered MVP agents."""
+    """Return all 50 registered climate intelligence agents across 3 domains.
+
+    Domains: Rainfall (15), Sunshine & Heat (15), Climate Intelligence (20).
+    """
     from app.orchestration.registry import ALL_AGENTS
     return {
         "count": len(ALL_AGENTS),

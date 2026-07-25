@@ -41,9 +41,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title=settings.PROJECT_NAME,
+    title="Project Fifty API",
+    description=(
+        "A 50-agent AI system for drought, heat, and climate monitoring in Rwanda. "
+        "Agents collect satellite data, calculate drought severity indices, detect "
+        "anomalies, and generate actionable intelligence for Cabinet briefings."
+    ),
     version=settings.PROJECT_VERSION,
-    description="Multi-agent climate intelligence platform with 50 specialised AI agents.",
+    contact={"name": "Project Fifty Team"},
     lifespan=lifespan,
 )
 
