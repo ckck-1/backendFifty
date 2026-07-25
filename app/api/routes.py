@@ -4,10 +4,12 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.analysis import router as analysis_router
+from app.api.cabinet import router as cabinet_router
 
 router = APIRouter()
 
 router.include_router(analysis_router, prefix="/api", tags=["analysis"])
+router.include_router(cabinet_router, prefix="/api", tags=["cabinet"])
 
 
 @router.get("/agents")
