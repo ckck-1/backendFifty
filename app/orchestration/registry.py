@@ -7,7 +7,6 @@ from typing import Optional
 @dataclass
 class AgentSpec:
     """Blueprint for a single agent."""
-    id: int
     name: str
     role: str
     goal: str
@@ -15,6 +14,7 @@ class AgentSpec:
     tools: list[str] = field(default_factory=list)
     expected_output: str = ""
     category: str = ""
+    id: int = 0
 
 from app.domains.rainfall import RAINFALL_AGENTS
 from app.domains.sunshine_heat import SUNSHINE_HEAT_AGENTS
@@ -25,6 +25,10 @@ ALL_AGENTS: list[AgentSpec] = (
     + SUNSHINE_HEAT_AGENTS
     + CLIMATE_INTEL_AGENTS
 )
+
+# Assign globally unique IDs centrally — subgroup files should NOT self-number
+for _idx, _agent in enumerate(ALL_AGENTS, start=1):
+    _agent.id = _idx
 
 AGENT_CATEGORIES: dict[str, list[AgentSpec]] = {
     "rainfall": RAINFALL_AGENTS,
