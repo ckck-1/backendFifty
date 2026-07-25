@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pytest
-from datetime import datetime
+import pytest_asyncio
 from uuid import uuid4
 
 from app.models.database_models import ApprovalStatus, ClimateReport, AnalysisRequest
@@ -32,35 +32,45 @@ def test_climate_report_has_approval_fields():
     assert "report_type" in columns
 
 
-# ── Async DB tests ──────────────────────────────────────────────
+# ── Async DB tests (NullPool — no connection reuse) ─────────────
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_analysis_request():
-    """Create a real AnalysisRequest row so FK constraints are satisfied."""
-    from app.core.database import async_session
+    """Create a real AnalysisRequest row so FK constraints are satisfied.
 
-    async with async_session() as db:
+    Uses NullPool session factory — each test gets its own connection,
+    eliminating asyncpg concurrency errors.
+    """
+    from app.core.database import get_test_session_factory
+
+    factory = get_test_session_factory()
+    session = factory()
+    try:
         req = AnalysisRequest(
             location_name="Test Sector",
             query="test query",
             status="completed",
         )
-        db.add(req)
-        await db.flush()
+        session.add(req)
+        await session.flush()
         req_id = req.id
-        await db.commit()
+        await session.commit()
         return req_id
+    finally:
+        await session.close()
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_create_pending_brief(test_analysis_request):
     """Creating a brief sets status to PENDING."""
     from app.services.cabinet_service import cabinet_service
-    from app.core.database import async_session
+    from app.core.database import get_test_session_factory
 
-    async with async_session() as db:
+    factory = get_test_session_factory()
+    session = factory()
+    try:
         brief = await cabinet_service.create_pending_brief(
-            db=db,
+            db=session,
             analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test summary",
@@ -68,21 +78,27 @@ async def test_create_pending_brief(test_analysis_request):
             full_report="Full report text",
             recommendations=["Rec 1", "Rec 2"],
         )
+        await session.flush()
+        await session.refresh(brief)
         assert brief.approval_status == ApprovalStatus.PENDING
         assert brief.report_type == "cabinet_brief"
         assert brief.risk_level == "SEVERE"
-        await db.rollback()
+        await session.rollback()
+    finally:
+        await session.close()
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_approve_brief(test_analysis_request):
     """Approving a brief sets status to APPROVED with reviewer info."""
     from app.services.cabinet_service import cabinet_service
-    from app.core.database import async_session
+    from app.core.database import get_test_session_factory
 
-    async with async_session() as db:
+    factory = get_test_session_factory()
+    session = factory()
+    try:
         brief = await cabinet_service.create_pending_brief(
-            db=db,
+            db=session,
             analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test summary",
@@ -91,23 +107,27 @@ async def test_approve_brief(test_analysis_request):
             recommendations=[],
         )
         approved = await cabinet_service.approve_brief(
-            db, brief.id, "Operator Jean"
+            session, brief.id, "Operator Jean"
         )
         assert approved.approval_status == ApprovalStatus.APPROVED
         assert approved.reviewed_by == "Operator Jean"
         assert approved.reviewed_at is not None
-        await db.rollback()
+        await session.rollback()
+    finally:
+        await session.close()
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_reject_brief(test_analysis_request):
     """Rejecting a brief sets status to REJECTED with reviewer info."""
     from app.services.cabinet_service import cabinet_service
-    from app.core.database import async_session
+    from app.core.database import get_test_session_factory
 
-    async with async_session() as db:
+    factory = get_test_session_factory()
+    session = factory()
+    try:
         brief = await cabinet_service.create_pending_brief(
-            db=db,
+            db=session,
             analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test summary",
@@ -116,23 +136,27 @@ async def test_reject_brief(test_analysis_request):
             recommendations=[],
         )
         rejected = await cabinet_service.reject_brief(
-            db, brief.id, "Operator Paul"
+            session, brief.id, "Operator Paul"
         )
         assert rejected.approval_status == ApprovalStatus.REJECTED
         assert rejected.reviewed_by == "Operator Paul"
         assert rejected.reviewed_at is not None
-        await db.rollback()
+        await session.rollback()
+    finally:
+        await session.close()
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_cannot_approve_already_approved(test_analysis_request):
     """Cannot approve a brief that is already approved."""
     from app.services.cabinet_service import cabinet_service
-    from app.core.database import async_session
+    from app.core.database import get_test_session_factory
 
-    async with async_session() as db:
+    factory = get_test_session_factory()
+    session = factory()
+    try:
         brief = await cabinet_service.create_pending_brief(
-            db=db,
+            db=session,
             analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test",
@@ -140,21 +164,25 @@ async def test_cannot_approve_already_approved(test_analysis_request):
             full_report="Report",
             recommendations=[],
         )
-        await cabinet_service.approve_brief(db, brief.id, "Op 1")
+        await cabinet_service.approve_brief(session, brief.id, "Op 1")
         with pytest.raises(ValueError, match="already"):
-            await cabinet_service.approve_brief(db, brief.id, "Op 2")
-        await db.rollback()
+            await cabinet_service.approve_brief(session, brief.id, "Op 2")
+        await session.rollback()
+    finally:
+        await session.close()
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_cannot_reject_already_rejected(test_analysis_request):
     """Cannot reject a brief that is already rejected."""
     from app.services.cabinet_service import cabinet_service
-    from app.core.database import async_session
+    from app.core.database import get_test_session_factory
 
-    async with async_session() as db:
+    factory = get_test_session_factory()
+    session = factory()
+    try:
         brief = await cabinet_service.create_pending_brief(
-            db=db,
+            db=session,
             analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test",
@@ -162,21 +190,25 @@ async def test_cannot_reject_already_rejected(test_analysis_request):
             full_report="Report",
             recommendations=[],
         )
-        await cabinet_service.reject_brief(db, brief.id, "Op 1")
+        await cabinet_service.reject_brief(session, brief.id, "Op 1")
         with pytest.raises(ValueError, match="already"):
-            await cabinet_service.reject_brief(db, brief.id, "Op 2")
-        await db.rollback()
+            await cabinet_service.reject_brief(session, brief.id, "Op 2")
+        await session.rollback()
+    finally:
+        await session.close()
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_dispatch_only_works_on_approved(test_analysis_request):
     """dispatch_approved_brief returns False for non-approved briefs."""
     from app.services.cabinet_service import cabinet_service
-    from app.core.database import async_session
+    from app.core.database import get_test_session_factory
 
-    async with async_session() as db:
+    factory = get_test_session_factory()
+    session = factory()
+    try:
         brief = await cabinet_service.create_pending_brief(
-            db=db,
+            db=session,
             analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test",
@@ -185,11 +217,13 @@ async def test_dispatch_only_works_on_approved(test_analysis_request):
             recommendations=[],
         )
         # Pending — should not dispatch
-        result = await cabinet_service.dispatch_approved_brief(db, brief.id)
+        result = await cabinet_service.dispatch_approved_brief(session, brief.id)
         assert result is False
 
         # Reject — should not dispatch
-        await cabinet_service.reject_brief(db, brief.id, "Op 1")
-        result = await cabinet_service.dispatch_approved_brief(db, brief.id)
+        await cabinet_service.reject_brief(session, brief.id, "Op 1")
+        result = await cabinet_service.dispatch_approved_brief(session, brief.id)
         assert result is False
-        await db.rollback()
+        await session.rollback()
+    finally:
+        await session.close()

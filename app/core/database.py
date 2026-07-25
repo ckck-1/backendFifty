@@ -4,6 +4,7 @@ from __future__ import annotations
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.core.config import get_settings
 
@@ -14,6 +15,7 @@ engine = create_async_engine(
     echo=settings.DEBUG,
     pool_size=20,
     max_overflow=10,
+    pool_pre_ping=True,
 )
 
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -54,3 +56,27 @@ async def init_db() -> None:
 async def close_db() -> None:
     """Dispose the async engine on shutdown."""
     await engine.dispose()
+
+
+# ── Test support ────────────────────────────────────────────────
+
+_test_session_factory: async_sessionmaker[AsyncSession] | None = None
+
+
+def get_test_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Return a session factory using NullPool — one connection per session, no reuse.
+
+    This eliminates asyncpg concurrency errors in tests.
+    The engine is created once and reused across all tests.
+    """
+    global _test_session_factory
+    if _test_session_factory is None:
+        test_engine = create_async_engine(
+            settings.DATABASE_URL,
+            echo=False,
+            poolclass=NullPool,
+        )
+        _test_session_factory = async_sessionmaker(
+            test_engine, class_=AsyncSession, expire_on_commit=False
+        )
+    return _test_session_factory
