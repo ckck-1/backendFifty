@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 class ArcGISService:
     def __init__(self):
-        self.api_key = settings.arcgis_api_key
-        self.layer_url = settings.arcgis_feature_layer_url
+        self.api_key = settings.ARCGIS_API_KEY
+        self.layer_url = settings.ARCGIS_FEATURE_LAYER_URL
 
     def _configured(self) -> bool:
         return bool(self.api_key and self.layer_url)

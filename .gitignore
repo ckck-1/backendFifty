@@ -19,7 +19,6 @@ ENV/
 .env
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -43,3 +42,7 @@ report.md
 .pytest_cache/
 htmlcov/
 .coverage
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
