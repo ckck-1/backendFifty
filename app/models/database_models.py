@@ -17,7 +17,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import relationship
 
-from app.database import Base
+from app.core.database import Base
 
 
 def generate_uuid() -> uuid.UUID:
