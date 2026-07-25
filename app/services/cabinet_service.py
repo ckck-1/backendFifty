@@ -7,7 +7,7 @@ No automated dispatch is ever permitted for Cabinet-level reports.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -98,7 +98,7 @@ class CabinetService:
 
         brief.approval_status = ApprovalStatus.APPROVED
         brief.reviewed_by = reviewer_name
-        brief.reviewed_at = datetime.utcnow()
+        brief.reviewed_at = datetime.now(UTC)
         await db.flush()
 
         logger.info(
@@ -128,7 +128,7 @@ class CabinetService:
 
         brief.approval_status = ApprovalStatus.REJECTED
         brief.reviewed_by = reviewer_name
-        brief.reviewed_at = datetime.utcnow()
+        brief.reviewed_at = datetime.now(UTC)
         await db.flush()
 
         logger.info(

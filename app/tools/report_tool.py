@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from langchain_core.tools import tool
 
 @tool
@@ -22,8 +22,8 @@ def report_generator(input_data: str) -> str:
     recs = data.get("recommendations", [])
 
     report = {
-        "report_id": f"RPT-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
-        "generated_at": datetime.utcnow().isoformat(),
+        "report_id": f"RPT-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}",
+        "generated_at": datetime.now(UTC).isoformat(),
         "title": f"Climate Intelligence Report — {location}",
         "location": location,
         "risk_level": risk,

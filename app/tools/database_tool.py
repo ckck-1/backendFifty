@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from langchain_core.tools import tool
 from app.services.memory import memory_service
 
@@ -21,7 +21,7 @@ def database_lookup(input_data: str) -> str:
     location = payload.get("location", "unknown")
 
     if action == "store":
-        key = f"report:{location}:{datetime.utcnow().isoformat()}"
+        key = f"report:{location}:{datetime.now(UTC).isoformat()}"
         data = payload.get("data", {})
         memory_service.set(key, data)
         return f"Stored report for {location} under key {key}"

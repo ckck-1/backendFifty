@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 from uuid import uuid4
 
@@ -60,7 +60,7 @@ class AnalysisService:
             req.result_summary = summary
             req.risk_level = risk_level
             req.confidence = confidence
-            req.completed_at = datetime.utcnow()
+            req.completed_at = datetime.now(UTC)
             await db.flush()
 
     async def fail_request(self, db: AsyncSession, request_id, error: str) -> None:
