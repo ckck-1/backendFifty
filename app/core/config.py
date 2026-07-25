@@ -36,13 +36,18 @@ class Settings(BaseSettings):
     CREW_MAX_ITER: int = 10
 
     # ArcGIS
-    arcgis_api_key: str = ""
-    arcgis_feature_layer_url: str = ""
+    ARCGIS_API_KEY: str = ""
+    ARCGIS_FEATURE_LAYER_URL: str = ""
+
+    # Twilio
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""
 
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
-        "case_sensitive": True,
+        "case_sensitive": False,
     }
 
 
