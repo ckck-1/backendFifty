@@ -29,7 +29,13 @@ async def lifespan(app: FastAPI):
         logger.info("Database tables created")
     except Exception as exc:
         logger.warning("Database init skipped (will retry): %s", exc)
+
+    from app.services.scheduler import start_scheduler, stop_scheduler
+    start_scheduler()
+
     yield
+
+    stop_scheduler()
     await close_db()
     logger.info("Project Fifty shut down")
 
