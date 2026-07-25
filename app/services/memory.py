@@ -25,7 +25,7 @@ class MemoryService:
     def _try_connect(self) -> None:
         try:
             import redis
-            from app.config import get_settings
+            from app.core.config import get_settings
 
             settings = get_settings()
             if settings.REDIS_URL:
