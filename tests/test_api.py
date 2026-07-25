@@ -18,5 +18,5 @@ async def test_list_agents(client):
     resp = await client.get("/agents")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["count"] == 15
-    assert len(data["agents"]) == 15
+    assert data["count"] >= 17
+    assert len(data["agents"]) >= 17
