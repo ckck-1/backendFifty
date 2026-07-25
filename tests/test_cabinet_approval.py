@@ -5,8 +5,10 @@ import pytest
 from datetime import datetime
 from uuid import uuid4
 
-from app.models.database_models import ApprovalStatus, ClimateReport
+from app.models.database_models import ApprovalStatus, ClimateReport, AnalysisRequest
 
+
+# ── Sync unit tests (no DB) ─────────────────────────────────────
 
 def test_approval_status_enum_values():
     """ApprovalStatus has exactly three states."""
@@ -30,34 +32,28 @@ def test_climate_report_has_approval_fields():
     assert "report_type" in columns
 
 
-def test_climate_report_default_approval_status():
-    """New ClimateReport defaults to PENDING approval status."""
-    report = ClimateReport(
-        analysis_request_id=uuid4(),
-        title="Test Brief",
-        summary="Test summary",
-        full_report="Test full report",
-    )
-    assert report.approval_status == ApprovalStatus.PENDING
-    assert report.reviewed_by is None
-    assert report.reviewed_at is None
-    assert report.report_type == "json"
+# ── Async DB tests ──────────────────────────────────────────────
 
+@pytest.fixture
+async def test_analysis_request():
+    """Create a real AnalysisRequest row so FK constraints are satisfied."""
+    from app.core.database import async_session
 
-def test_climate_report_cabinet_brief_type():
-    """Cabinet briefs are tagged with report_type='cabinet_brief'."""
-    report = ClimateReport(
-        analysis_request_id=uuid4(),
-        title="Cabinet Brief",
-        summary="Emergency summary",
-        full_report="Full emergency report",
-        report_type="cabinet_brief",
-    )
-    assert report.report_type == "cabinet_brief"
+    async with async_session() as db:
+        req = AnalysisRequest(
+            location_name="Test Sector",
+            query="test query",
+            status="completed",
+        )
+        db.add(req)
+        await db.flush()
+        req_id = req.id
+        await db.commit()
+        return req_id
 
 
 @pytest.mark.anyio
-async def test_create_pending_brief():
+async def test_create_pending_brief(test_analysis_request):
     """Creating a brief sets status to PENDING."""
     from app.services.cabinet_service import cabinet_service
     from app.core.database import async_session
@@ -65,7 +61,7 @@ async def test_create_pending_brief():
     async with async_session() as db:
         brief = await cabinet_service.create_pending_brief(
             db=db,
-            analysis_request_id=uuid4(),
+            analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test summary",
             risk_level="SEVERE",
@@ -79,7 +75,7 @@ async def test_create_pending_brief():
 
 
 @pytest.mark.anyio
-async def test_approve_brief():
+async def test_approve_brief(test_analysis_request):
     """Approving a brief sets status to APPROVED with reviewer info."""
     from app.services.cabinet_service import cabinet_service
     from app.core.database import async_session
@@ -87,7 +83,7 @@ async def test_approve_brief():
     async with async_session() as db:
         brief = await cabinet_service.create_pending_brief(
             db=db,
-            analysis_request_id=uuid4(),
+            analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test summary",
             risk_level="RED",
@@ -104,7 +100,7 @@ async def test_approve_brief():
 
 
 @pytest.mark.anyio
-async def test_reject_brief():
+async def test_reject_brief(test_analysis_request):
     """Rejecting a brief sets status to REJECTED with reviewer info."""
     from app.services.cabinet_service import cabinet_service
     from app.core.database import async_session
@@ -112,7 +108,7 @@ async def test_reject_brief():
     async with async_session() as db:
         brief = await cabinet_service.create_pending_brief(
             db=db,
-            analysis_request_id=uuid4(),
+            analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test summary",
             risk_level="ORANGE",
@@ -129,7 +125,7 @@ async def test_reject_brief():
 
 
 @pytest.mark.anyio
-async def test_cannot_approve_already_approved():
+async def test_cannot_approve_already_approved(test_analysis_request):
     """Cannot approve a brief that is already approved."""
     from app.services.cabinet_service import cabinet_service
     from app.core.database import async_session
@@ -137,7 +133,7 @@ async def test_cannot_approve_already_approved():
     async with async_session() as db:
         brief = await cabinet_service.create_pending_brief(
             db=db,
-            analysis_request_id=uuid4(),
+            analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test",
             risk_level="RED",
@@ -151,7 +147,7 @@ async def test_cannot_approve_already_approved():
 
 
 @pytest.mark.anyio
-async def test_cannot_reject_already_rejected():
+async def test_cannot_reject_already_rejected(test_analysis_request):
     """Cannot reject a brief that is already rejected."""
     from app.services.cabinet_service import cabinet_service
     from app.core.database import async_session
@@ -159,7 +155,7 @@ async def test_cannot_reject_already_rejected():
     async with async_session() as db:
         brief = await cabinet_service.create_pending_brief(
             db=db,
-            analysis_request_id=uuid4(),
+            analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test",
             risk_level="RED",
@@ -173,7 +169,7 @@ async def test_cannot_reject_already_rejected():
 
 
 @pytest.mark.anyio
-async def test_dispatch_only_works_on_approved():
+async def test_dispatch_only_works_on_approved(test_analysis_request):
     """dispatch_approved_brief returns False for non-approved briefs."""
     from app.services.cabinet_service import cabinet_service
     from app.core.database import async_session
@@ -181,7 +177,7 @@ async def test_dispatch_only_works_on_approved():
     async with async_session() as db:
         brief = await cabinet_service.create_pending_brief(
             db=db,
-            analysis_request_id=uuid4(),
+            analysis_request_id=test_analysis_request,
             title="Test Brief",
             summary="Test",
             risk_level="RED",

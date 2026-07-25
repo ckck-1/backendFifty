@@ -8,6 +8,12 @@ from app.main import app
 
 
 @pytest.fixture
+def anyio_backend():
+    """Restrict anyio tests to asyncio only — asyncpg is not trio-compatible."""
+    return "asyncio"
+
+
+@pytest.fixture
 async def client():
     """Async HTTP client for testing API endpoints."""
     transport = ASGITransport(app=app)
